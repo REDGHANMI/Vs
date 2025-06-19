@@ -1,6 +1,8 @@
 
-import { Building2, Fuel, TrendingUp } from "lucide-react";
+import { Building2, Fuel, TrendingUp, Database } from "lucide-react";
 import { useParameters } from "@/contexts/ParametersContext";
+import { mockRapportsStationsEnriched } from '@/data/mockRapportsStationsEnriched';
+import { mockStocksCiterneEnriched } from '@/data/mockStocksCiterneEnriched';
 
 interface SocietyManagerProps {
   selectedSociety: string;
@@ -8,39 +10,38 @@ interface SocietyManagerProps {
 }
 
 export default function SocietyManager({ selectedSociety, onSocietyChange }: SocietyManagerProps) {
-  const { societes, stations, mouvements } = useParameters();
+  const { societes, stations } = useParameters();
 
   const getSocietyStats = (societeId: string) => {
     const societyStations = stations.filter(s => s.societe_id === societeId);
-    const societyMouvements = mouvements.filter(m => 
-      m.type === "entree" && societyStations.some(s => s.id === m.station_id)
+    
+    // Enhanced stats calculation with better mock data integration
+    const stationMockIds = ['sta_001', 'sta_002', 'sta_003'];
+    const mockReports = mockRapportsStationsEnriched.filter(rapport => 
+      stationMockIds.includes(rapport.station_uuid)
     );
-    
-    const totalCA = societyMouvements.reduce((sum, mouvement) => sum + mouvement.montant, 0);
-    
+
+    const mockStocks = mockStocksCiterneEnriched.filter(stock => 
+      mockReports.some(rapport => rapport.uuid === stock.rapport_uuid)
+    );
+
+    // Calculate average tank fill rate from mock data
+    let averageFillRate = 0;
+    if (mockStocks.length > 0) {
+      const totalStock = mockStocks.reduce((sum, stock) => sum + stock.stock_fin, 0);
+      const totalCapacity = mockStocks.reduce((sum, stock) => sum + stock.capacite_max, 0);
+      averageFillRate = totalCapacity > 0 ? (totalStock / totalCapacity) * 100 : 0;
+    }
+
     return {
       stationsCount: societyStations.length,
-      estimateCA: `~${(totalCA / 1000).toFixed(1)}K MAD`,
-      estimateVol: `~${societyStations.length * 5000}L` // Estimated volume based on stations
+      fillRate: Math.round(averageFillRate * 10) / 10,
+      hasData: mockStocks.length > 0
     };
   };
 
-  const getSocietyColor = (index: number) => {
-    const colors = [
-      "bg-blue-100 text-blue-800 border-blue-200",
-      "bg-green-100 text-green-800 border-green-200", 
-      "bg-purple-100 text-purple-800 border-purple-200"
-    ];
-    return colors[index % colors.length];
-  };
-
-  const getSocietyIconColor = (index: number) => {
-    const colors = ["text-blue-500", "text-green-500", "text-purple-500"];
-    return colors[index % colors.length];
-  };
-
   return (
-    <div className="bg-white border-b border-gray-200 px-8 py-4">
+    <div className="bg-white border-b border-gray-200 px-8 py-3">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {societes.map((societe, index) => {
           const stats = getSocietyStats(societe.id);
@@ -51,27 +52,65 @@ export default function SocietyManager({ selectedSociety, onSocietyChange }: Soc
               key={societe.id}
               type="button"
               onClick={() => onSocietyChange(isActive ? "all" : societe.id)}
-              className={`w-full flex flex-col items-start bg-gray-50 rounded-lg border
-                transition-all shadow-sm px-5 py-3 h-full min-h-[90px]
-                hover:shadow-md cursor-pointer relative
-                ${isActive ? "ring-2 ring-blue-400 border-blue-200 bg-blue-50 shadow" : "border-gray-200 hover:border-blue-200"}`}
-              style={{ minHeight: 80 }}
+              className={`w-full flex items-center gap-3 bg-gray-50 rounded-xl border
+                transition-all shadow-sm px-4 py-3 h-auto
+                hover:shadow-lg cursor-pointer relative
+                ${isActive ? "ring-2 ring-blue-400 border-blue-200 bg-blue-50 shadow-md" : "border-gray-200 hover:border-blue-200"}`}
+              style={{ 
+                borderLeft: `4px solid ${societe.couleur_theme || '#213385'}`,
+                background: isActive 
+                  ? `linear-gradient(135deg, ${societe.couleur_theme}08 0%, ${societe.couleur_theme}03 100%)`
+                  : undefined
+              }}
             >
-              <div className="flex items-center mb-1">
-                <Building2 className={`w-5 h-5 ${getSocietyIconColor(index)}`} />
-                <span className={`ml-2 px-2 py-0.5 rounded border ${getSocietyColor(index)} font-semibold text-xs`}>
-                  {societe.nom}
-                </span>
-              </div>
-              <div className="text-gray-800 font-semibold text-lg">{stats.stationsCount} stations</div>
-              <div className="flex items-center gap-6 text-xs text-gray-500 mt-1">
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>{stats.estimateCA}</span>
+              {/* Logo section */}
+              <div className="flex-shrink-0">
+                {societe.logo_url ? (
+                  <img 
+                    src={societe.logo_url} 
+                    alt={societe.nom}
+                    className="w-10 h-10 rounded-lg object-contain bg-white border border-gray-200 p-1 shadow-sm"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className={`w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-sm ${societe.logo_url ? 'hidden' : ''}`}
+                  style={{ 
+                    background: `linear-gradient(135deg, ${societe.couleur_theme || '#213385'} 0%, ${societe.couleur_theme || '#213385'}80 100%)`
+                  }}
+                >
+                  <Building2 className="w-5 h-5 text-white" />
                 </div>
-                <div className="flex items-center gap-1">
-                  <Fuel className="w-4 h-4" />
-                  <span>{stats.estimateVol}</span>
+              </div>
+
+              {/* Content section */}
+              <div className="flex-1 text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 
+                    className="font-bold text-sm"
+                    style={{ color: societe.couleur_theme || '#213385' }}
+                  >
+                    {societe.nom}
+                  </h3>
+                </div>
+                
+                <div className="text-gray-800 font-semibold text-base mb-1">
+                  {stats.stationsCount} station{stats.stationsCount > 1 ? 's' : ''}
+                </div>
+                
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="flex items-center gap-1">
+                    <Database className="w-3 h-3 text-gray-500" />
+                    <span className="text-gray-600">
+                      {stats.hasData 
+                        ? `Taux cuve: ${stats.fillRate}%`
+                        : 'Données simulées'
+                      }
+                    </span>
+                  </div>
                 </div>
               </div>
             </button>

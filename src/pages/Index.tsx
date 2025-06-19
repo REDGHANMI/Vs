@@ -128,8 +128,7 @@ export default function Index() {
 
             {/* Station Panel */}
             <StationSlidePanel 
-              station={selectedStation}
-              isOpen={!!selectedStation}
+              stationId={selectedStationId}
               onClose={() => setSelectedStationId(null)}
             />
           </div>

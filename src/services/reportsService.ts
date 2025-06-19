@@ -4,23 +4,24 @@ import { supabase } from '@/integrations/supabase/client';
 export interface RapportStation {
   uuid: string;
   station_uuid: string;
+  doc_entry: string;
   date_rapport: string;
-  numero_rapport: string | null;
-  heure_creation: string | null;
-  statut: string;
+  gerant_nom: string;
   total_ca: number;
   total_tonnage: number;
+  numero_rapport: string | null;
+  heure_creation: string | null;
   total_vente_comptant: number | null;
   total_vente_credit: number | null;
   total_non_carburant: number | null;
-  gerant_nom: string;
-  doc_entry: string;
+  statut: "complet" | "manquant" | "en_cours";
   created_at: string;
 }
 
 export const getRapportsForStation = async (stationId: string): Promise<RapportStation[]> => {
   try {
-    console.log('Fetching reports for station:', stationId);
+    console.log('📊 Fetching reports for station:', stationId);
+    
     const { data, error } = await supabase
       .from('rapports_stations')
       .select('*')
@@ -28,118 +29,133 @@ export const getRapportsForStation = async (stationId: string): Promise<RapportS
       .order('date_rapport', { ascending: false });
 
     if (error) {
-      console.error('Error fetching reports:', error);
+      console.error('❌ Error fetching reports:', error);
       throw error;
     }
 
-    console.log('Successfully fetched reports:', data?.length || 0, data);
+    console.log('✅ Successfully fetched reports:', data?.length || 0);
     return (data || []) as RapportStation[];
   } catch (error) {
-    console.error('Exception in getRapportsForStation:', error);
+    console.error('💥 Exception in getRapportsForStation:', error);
     return [];
   }
 };
 
-export const getVentesForReport = async (reportUuid: string) => {
+export const getAllRapports = async (): Promise<RapportStation[]> => {
   try {
-    console.log('Fetching sales for report:', reportUuid);
+    console.log('📊 Fetching all reports...');
+    
     const { data, error } = await supabase
-      .from('ventes_produits')
+      .from('rapports_stations')
       .select('*')
-      .eq('rapport_uuid', reportUuid)
-      .order('created_at', { ascending: false });
+      .order('date_rapport', { ascending: false });
 
     if (error) {
-      console.error('Error fetching sales:', error);
+      console.error('❌ Error fetching all reports:', error);
       throw error;
     }
 
-    console.log('Successfully fetched sales:', data?.length || 0, data);
-    return data || [];
+    console.log('✅ Successfully fetched all reports:', data?.length || 0);
+    return (data || []) as RapportStation[];
   } catch (error) {
-    console.error('Exception in getVentesForReport:', error);
-    return [];
-  }
-};
-
-export const getEncaissementsForReport = async (reportUuid: string) => {
-  try {
-    console.log('Fetching payments for report:', reportUuid);
-    const { data, error } = await supabase
-      .from('encaissements')
-      .select('*')
-      .eq('rapport_uuid', reportUuid)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching payments:', error);
-      throw error;
-    }
-
-    console.log('Successfully fetched payments:', data?.length || 0, data);
-    return data || [];
-  } catch (error) {
-    console.error('Exception in getEncaissementsForReport:', error);
-    return [];
-  }
-};
-
-export const getStocksCiternesForReport = async (reportUuid: string) => {
-  try {
-    console.log('Fetching tank stocks for report:', reportUuid);
-    const { data, error } = await supabase
-      .from('stocks_citernes')
-      .select('*')
-      .eq('rapport_uuid', reportUuid)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching tank stocks:', error);
-      throw error;
-    }
-
-    console.log('Successfully fetched tank stocks:', data?.length || 0, data);
-    return data || [];
-  } catch (error) {
-    console.error('Exception in getStocksCiternesForReport:', error);
+    console.error('💥 Exception in getAllRapports:', error);
     return [];
   }
 };
 
 export const getVolucompteursForReport = async (reportUuid: string) => {
   try {
-    console.log('Fetching volucompteurs for report:', reportUuid);
+    console.log('📊 Fetching volucompteurs for report:', reportUuid);
     
-    // Récupérer les lignes de volucompteur liées au rapport
-    const { data: lignesData, error: lignesError } = await supabase
+    const { data, error } = await supabase
       .from('ventes_produits')
       .select(`
         *,
-        volucompteurs:volucompteur_id (
-          id,
-          code_volucompteur,
-          produit_nom,
-          produit_code,
-          prix_unitaire,
-          ilots:ilot_id (
-            id,
-            nom_ilot,
-            numero_ilot
-          )
+        volucompteurs(
+          *,
+          ilots(*)
         )
       `)
-      .eq('rapport_uuid', reportUuid)
-      .not('volucompteur_id', 'is', null);
+      .eq('rapport_uuid', reportUuid);
 
-    if (lignesError) {
-      console.error('Error fetching volucompteur lines:', lignesError);
-      throw lignesError;
+    if (error) {
+      console.error('❌ Error fetching volucompteurs:', error);
+      throw error;
     }
 
-    console.log('Successfully fetched volucompteur lines:', lignesData?.length || 0, lignesData);
-    return lignesData || [];
+    console.log('✅ Successfully fetched volucompteurs:', data?.length || 0);
+    return data || [];
   } catch (error) {
-    console.error('Exception in getVolucompteursForReport:', error);
+    console.error('💥 Exception in getVolucompteursForReport:', error);
+    return [];
+  }
+};
+
+export const getEncaissementsForReport = async (reportUuid: string) => {
+  try {
+    console.log('📊 Fetching encaissements for report:', reportUuid);
+    
+    const { data, error } = await supabase
+      .from('encaissements')
+      .select('*')
+      .eq('rapport_uuid', reportUuid)
+      .order('montant', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error fetching encaissements:', error);
+      throw error;
+    }
+
+    console.log('✅ Successfully fetched encaissements:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('💥 Exception in getEncaissementsForReport:', error);
+    return [];
+  }
+};
+
+export const getVentesForReport = async (reportUuid: string) => {
+  try {
+    console.log('📊 Fetching ventes for report:', reportUuid);
+    
+    const { data, error } = await supabase
+      .from('ventes_produits')
+      .select('*')
+      .eq('rapport_uuid', reportUuid)
+      .order('valeur_totale', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error fetching ventes:', error);
+      throw error;
+    }
+
+    console.log('✅ Successfully fetched ventes:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('💥 Exception in getVentesForReport:', error);
+    return [];
+  }
+};
+
+export const getStocksCiternesForReport = async (reportUuid: string) => {
+  try {
+    console.log('📊 Fetching stocks citernes for report:', reportUuid);
+    
+    const { data, error } = await supabase
+      .from('stocks_citernes')
+      .select('*')
+      .eq('rapport_uuid', reportUuid)
+      .order('produit', { ascending: true });
+
+    if (error) {
+      console.error('❌ Error fetching stocks citernes:', error);
+      throw error;
+    }
+
+    console.log('✅ Successfully fetched stocks citernes:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('💥 Exception in getStocksCiternesForReport:', error);
     return [];
   }
 };

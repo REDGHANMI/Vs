@@ -1,8 +1,9 @@
-
 import { useState } from "react";
-import { AlertTriangle, Clock, TrendingDown, FileX, ChevronRight, X } from "lucide-react";
+import { AlertTriangle, Clock, TrendingDown, FileX, ChevronRight, X, MessageCircle, Mail } from "lucide-react";
 import { Station } from "@/types/database";
 import { useParameters } from "@/contexts/ParametersContext";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface AlertsPanelProps {
   stations: Station[];
@@ -14,6 +15,7 @@ export default function AlertsPanel({ stations, onStationSelect, onHighlightStat
   const { notifications, mouvements } = useParameters();
   const [isOpen, setIsOpen] = useState(false);
   const [activeAlert, setActiveAlert] = useState<string | null>(null);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
 
   // Get stations with low CA based on real movement data
   const getStationsWithLowCash = () => {
@@ -115,6 +117,10 @@ export default function AlertsPanel({ stations, onStationSelect, onHighlightStat
     setIsOpen(false);
   };
 
+  const handleContactStation = (station: Station) => {
+    setSelectedStation(station);
+  };
+
   return (
     <>
       {/* Alert Trigger Button */}
@@ -195,26 +201,74 @@ export default function AlertsPanel({ stations, onStationSelect, onHighlightStat
                 {activeAlert === alert.id && alert.stations.length > 0 && (
                   <div className="border-t border-gray-200 bg-white">
                     {alert.stations.map(station => (
-                      <button
-                        key={station.id}
-                        onClick={() => handleStationClick(station.id)}
-                        className="w-full p-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
+                      <div key={station.id} className="p-3 border-b border-gray-100 last:border-b-0">
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">{station.nom}</p>
-                            <p className="text-sm text-gray-600">
-                              {station.gerant?.nom_complet || 'Gérant non assigné'} • {station.societe?.nom || 'Société inconnue'}
-                            </p>
-                            {alert.id === "low_cash" && (
-                              <p className="text-xs text-red-600">
-                                Dernier mouvement: {mouvements.filter(m => m.station_id === station.id && m.type === "entree").slice(-1)[0]?.montant.toLocaleString() || 0} MAD
+                          <button
+                            onClick={() => handleStationClick(station.id)}
+                            className="flex-1 text-left hover:bg-gray-50 p-2 rounded transition-colors"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-900">{station.nom}</p>
+                              <p className="text-sm text-gray-600">
+                                {station.gerant?.nom_complet || 'Gérant non assigné'} • {station.societe?.nom || 'Société inconnue'}
                               </p>
-                            )}
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                              {alert.id === "low_cash" && (
+                                <p className="text-xs text-red-600">
+                                  Dernier mouvement: {mouvements.filter(m => m.station_id === station.id && m.type === "entree").slice(-1)[0]?.montant.toLocaleString() || 0} MAD
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleContactStation(station)}
+                                className="ml-2 flex items-center space-x-1"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                                <span>Contact</span>
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Contacter la station {station.nom}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                  <h4 className="font-medium mb-2">Message prérédigé :</h4>
+                                  <p className="text-sm text-gray-700">
+                                    "Bonjour, nous avons détecté une anomalie dans les données de votre station. 
+                                    Pouvez-vous nous fournir des explications sur cet écart ? Merci."
+                                  </p>
+                                </div>
+                                <div className="flex space-x-3">
+                                  <Button 
+                                    className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                                    onClick={() => {
+                                      alert('Simulation : Message WhatsApp envoyé !');
+                                    }}
+                                  >
+                                    <MessageCircle className="w-4 h-4 mr-2" />
+                                    WhatsApp
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    className="flex-1"
+                                    onClick={() => {
+                                      alert('Simulation : Email envoyé !');
+                                    }}
+                                  >
+                                    <Mail className="w-4 h-4 mr-2" />
+                                    Email
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}

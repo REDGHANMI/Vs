@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { FileText, Calendar, User, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,6 @@ export default function StationReportsTab({ stationId }: StationReportsTabProps)
 
   useEffect(() => {
     const fetchReports = async () => {
-      console.log('StationReportsTab: Station ID received:', stationId);
       console.log('StationReportsTab: Fetching reports for station:', stationId);
       setLoading(true);
       try {
@@ -85,12 +85,6 @@ export default function StationReportsTab({ stationId }: StationReportsTabProps)
           <span>Rapports de la station</span>
         </h3>
         <Badge variant="outline">{reports.length} rapports</Badge>
-      </div>
-
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-        <p className="text-sm text-yellow-800">
-          <strong>Debug Info:</strong> Station ID: {stationId || 'No station selected'} | Reports found: {reports.length}
-        </p>
       </div>
 
       {reports.length > 0 ? (
@@ -163,7 +157,6 @@ export default function StationReportsTab({ stationId }: StationReportsTabProps)
           <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun rapport</h3>
           <p className="text-gray-500">Cette station n'a pas encore de rapports.</p>
-          <p className="text-sm text-gray-400 mt-2">Station ID: {stationId}</p>
         </div>
       )}
     </div>

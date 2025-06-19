@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowLeft, DollarSign, CreditCard, Fuel, Package } from 'lucide-react';
+import { ArrowLeft, CreditCard, Fuel, Package } from 'lucide-react';
 import { RapportStation } from '@/services/reportsService';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -55,7 +55,6 @@ export default function ReportDetailsView({ report, onBack }: ReportDetailsViewP
                   {formatMAD(report.total_ca)}
                 </p>
               </div>
-              <DollarSign className="w-8 h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -78,7 +77,6 @@ export default function ReportDetailsView({ report, onBack }: ReportDetailsViewP
       <Tabs defaultValue="ventes" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="ventes" className="flex items-center space-x-2">
-            <DollarSign className="w-4 h-4" />
             <span>Ventes</span>
           </TabsTrigger>
           <TabsTrigger value="encaissements" className="flex items-center space-x-2">
